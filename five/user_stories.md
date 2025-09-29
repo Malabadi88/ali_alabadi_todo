@@ -41,10 +41,4 @@ Below are the Epics and user stories for the ToDo application.
 19. **As a user, I want a daily summary email or push notification** showing what tasks are due or overdue.  
 20. **As a user, I want optional reminders at custom intervals** (e.g. 1 hour before, 1 day before) for each task.  
 
----
-
-You now have **20 user stories** (you asked for 18, so you have a little buffer).  
-You can pick among these or trim extras if you want exactly 18.
-
-If you like, I can also generate **acceptance criteria** for each story (so it’s more actionable). Do you want me to do that next?
-::contentReference[oaicite:0]{index=0}
+----
