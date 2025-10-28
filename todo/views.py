@@ -1,50 +1,41 @@
-from django.contrib.auth import authenticate
-from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from .models import Task
-from .serializers import TaskSerializer, SignupSerializer, LoginSerializer
 
+def home_view(request):
+    if request.user.is_authenticated:
+        return redirect('task_list')
+    return redirect('login')
 
-class TaskViewSet(viewsets.ModelViewSet):
-    serializer_class = TaskSerializer
-    permission_classes = [permissions.IsAuthenticated]
+def signup_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = User.objects.create_user(username=username, password=password)
+        login(request, user)
+        return redirect('task_list')
+    return render(request, 'todo/signup.html')
 
-    def get_queryset(self):
-        return Task.objects.filter(user=self.request.user)
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            return redirect('task_list')
+    return render(request, 'todo/login.html')
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)   # 👈 Add this exactly here
+def logout_view(request):
+    logout(request)
+    return redirect('login')
 
-
-class SignupView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        serializer = SignupSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({"id": user.id}, status=status.HTTP_201_CREATED)
-
-
-class LoginView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = authenticate(
-            username=serializer.validated_data["email"],
-            password=serializer.validated_data["password"],
-        )
-        if not user:
-            return Response({"detail": "Invalid credentials"}, status=400)
-        refresh = RefreshToken.for_user(user)
-        return Response({"access": str(refresh.access_token), "refresh": str(refresh)})
-
-
-class LogoutView(APIView):
-    def post(self, request):
-        return Response({"detail": "Logged out"})
+def task_list_view(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    if request.method == 'POST':
+        title = request.POST['title']
+        Task.objects.create(user=request.user, title=title)
+    tasks = Task.objects.filter(user=request.user)
+    return render(request, 'todo/home.html', {'tasks': tasks})
